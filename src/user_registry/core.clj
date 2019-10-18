@@ -37,11 +37,7 @@
                                 {:id (try-parse-uuid id)})]
                    {:user-registry/data (user/select m)}))))
 
-  (route/not-found "Resource not found."))
-
-(defn boot!
-  [{:keys [db-spec]}]
-  (db-users/create-users-table db-spec))
+  (route/not-found "Try posting to /user"))
 
 (defn wrap-config
   [handler config]
@@ -52,7 +48,6 @@
 
 (defn make-handler
   [config]
-  (boot! config)
   (-> app
     (wrap-config config)
     (ring-defaults/wrap-defaults ring-defaults/api-defaults)))
@@ -61,10 +56,16 @@
 
 (defn load-config [] (-> "config.edn" (io/resource) (slurp) (edn/read-string)))
 
-(defn handler
+(defn boot!
+  [{:keys [db-spec]}]
+  (db-users/create-users-table db-spec))
+
+(defn handler!
   [req]
   (if-let [h @handler-atom]
     (h req)
-    (let [new-h (make-handler (load-config))]
+    (let [config (load-config)
+          new-h (make-handler config)]
+      (boot! config)
       (reset! handler-atom new-h)
       (new-h req))))

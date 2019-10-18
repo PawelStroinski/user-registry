@@ -4,8 +4,7 @@
             [ring.mock.request :as mock]
             [cheshire.core :as json]
             [user-registry.core :as core]
-            [user-registry.user-test :refer [input]]
-            [user-registry.db.users :as db-users]))
+            [user-registry.user-test :refer [input]]))
 
 (fact "load config"
   (core/load-config) => map?)
@@ -15,6 +14,10 @@
    {:classname "org.h2.Driver"
     :subprotocol "h2:mem"
     :subname "user-registry;DB_CLOSE_DELAY=-1"}})
+
+(def no-db (assoc-in config [:db-spec :subname] "x"))
+
+(core/boot! config)
 
 (defn handler [req] ((core/make-handler config) req))
 
@@ -57,8 +60,8 @@
       (:status res) => 400
       (:body res) => #(str/includes? % "duplicate")))
 
-  (fact "db doesn't work"
-    (with-redefs [db-users/insert-user (fn [& _] (throw (Exception. "Error")))]
+  (fact "db doesn't exist"
+    (with-redefs [config no-db]
       (:status (post (next-user!))) => 500)))
 
 (defn do-get [uri] (handler (mock/request :get uri)))
@@ -79,6 +82,6 @@
     (doseq [id ["xyz" "d7832415-8d74-4224-9a34-4d728141d987"]]
       (:status (do-get (str "/user/" id))) => 404))
 
-  (fact "db doesn't work"
-    (with-redefs [db-users/user-by-id (fn [& _] (throw (Exception. "Error")))]
+  (fact "db doesn't exist"
+    (with-redefs [config no-db]
       (:status (do-get "/user/d7832415-8d74-4224-9a34-4d728141d987")) => 500)))

@@ -1,6 +1,7 @@
 # user-registry
 
-Having fun with HugSQL and Liberator.
+Having fun with [HugSQL](https://www.hugsql.org/)
+and [Liberator](http://clojure-liberator.github.io/liberator/).
 
 ## Usage
 
